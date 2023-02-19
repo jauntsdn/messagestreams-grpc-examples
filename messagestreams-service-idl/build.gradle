@@ -1,0 +1,30 @@
+/*
+ * Copyright 2021 - present Maksym Ostroverkhov.
+ */
+
+plugins {
+    id "com.google.protobuf"
+    id "idea"
+}
+
+description = "jauntsdn-messageStreams: service definitions"
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc"
+    }
+    generateProtoTasks {
+        all()*.enabled = false
+    }
+}
+
+dependencies {
+    protobuf "com.jauntsdn.rsocket:rsocket-rpc-idl"
+}
+
+idea {
+    module {
+        sourceDirs += file("src/main/proto")
+    }
+}
+
