@@ -25,6 +25,7 @@ option java_multiple_files = true;
 service StreamService {
     rpc reply (Request) returns (Response) {}
     rpc serverStream (Request) returns (stream Response) {}
+    rpc bidiStream (stream Request) returns (stream Response) {}
 }
 
 message Request {

@@ -13,6 +13,7 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
   private final io.netty.buffer.ByteBufAllocator allocator;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> replyInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> serverStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> bidiStreamInstrumentation;
   private final com.jauntsdn.rsocket.Rpc.Codec rpcCodec;
 
   private StreamServiceServer(StreamService service, com.jauntsdn.rsocket.RpcInstrumentation instrumentation, io.netty.buffer.ByteBufAllocator allocator, com.jauntsdn.rsocket.Rpc.Codec rpcCodec) {
@@ -22,9 +23,11 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
     if (instrumentation == null) {
       this.replyInstrumentation = null;
       this.serverStreamInstrumentation = null;
+      this.bidiStreamInstrumentation = null;
     } else {
       this.replyInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_REPLY, false);
       this.serverStreamInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_SERVER_STREAM, true);
+      this.bidiStreamInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_BIDI_STREAM, true);
     }
   }
 
@@ -104,6 +107,22 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
       int flags = com.jauntsdn.rsocket.Rpc.RpcMetadata.flags(header);
       String method = rpcCodec.decodeMessageMethod(metadata, header, flags);
 
+      switch (method) {
+        case StreamService.METHOD_BIDI_STREAM: {
+          if (!StreamService.METHOD_BIDI_STREAM_IDEMPOTENT && com.jauntsdn.rsocket.Rpc.RpcMetadata.flagIdempotentCall(flags)) {
+            observer.onError(new com.jauntsdn.rsocket.exceptions.RpcException("StreamServiceServer: idempotent call to non-idempotent method: " + method));
+            return com.jauntsdn.rsocket.MessageStreamsHandler.noopServerObserver();
+          }
+          com.jauntsdn.rsocket.RpcInstrumentation.Listener<com.jauntsdn.rsocket.Message> instrumentationListener = null;
+          if (bidiStreamInstrumentation != null) {
+            instrumentationListener = bidiStreamInstrumentation.create();
+          }
+          io.grpc.stub.StreamObserver<example.Request> bidiStream = service.bidiStream(metadata, com.jauntsdn.rsocket.RpcMessageCodec.Stream.Server.encode(observer, encode, instrumentationListener));
+          io.grpc.stub.StreamObserver<com.jauntsdn.rsocket.Message> request = decode(example.Request.parser(), bidiStream, observer);
+          request.onNext(message);
+          return request;
+        }
+      }
       if (com.jauntsdn.rsocket.Rpc.RpcMetadata.flagForeignCall(flags)) {
         if (requestStreamHandler(flags, method, message.data(), metadata, observer)) {
           return com.jauntsdn.rsocket.MessageStreamsHandler.noopServerObserver();

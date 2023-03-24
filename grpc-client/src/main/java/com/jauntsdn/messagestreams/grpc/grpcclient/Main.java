@@ -8,6 +8,8 @@ import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.stub.ClientCallStreamObserver;
+import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -27,7 +29,7 @@ public class Main {
     ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
 
     String port = System.getProperty("SERVICE_PORT_GRPC", "7782");
-    String service = System.getProperty("SERVICE", "localhost/reply");
+    String service = System.getProperty("SERVICE", "localhost/stream");
     String host = service(service);
     String call = call(service);
     logger.info("==> MSTREAMS GRPC SERVICE: grpc-java client {}", service);
@@ -39,7 +41,8 @@ public class Main {
     DecompressorRegistry decompressorRegistry =
         DecompressorRegistry.emptyInstance().with(Codec.Identity.NONE, true);
 
-    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+    NioEventLoopGroup eventLoopGroup =
+        new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
 
     ManagedChannel channel =
         NettyChannelBuilder.forAddress(inetSocketAddress(host, port))
@@ -52,6 +55,9 @@ public class Main {
             .build();
 
     switch (call) {
+      case "bidi":
+        Bidi.start(channel, eventLoopGroup.next());
+        break;
       case "stream":
         Stream.start(channel, eventLoopGroup.next());
         break;
@@ -175,6 +181,83 @@ public class Main {
     }
   }
 
+  static final class Bidi {
+    private static final int WINDOW_SIZE = 7777;
+
+    public static void start(ManagedChannel channel, ScheduledExecutorService executor) {
+      StreamServiceGrpc.StreamServiceStub streamService = StreamServiceGrpc.newStub(channel);
+
+      Request request = Request.newBuilder().setMessage("data").build();
+
+      Counter counter = new Counter(executor);
+
+      streamService.bidiStream(
+          new ClientResponseObserver<Request, Response>() {
+            int windowSize = WINDOW_SIZE;
+            ClientCallStreamObserver<Request> requestStream;
+
+            @Override
+            public void beforeStart(ClientCallStreamObserver<Request> requestStream) {
+              this.requestStream = requestStream;
+              requestStream.setOnReadyHandler(
+                  () -> {
+                    while (requestStream.isReady()) {
+                      counter.countSent();
+                      requestStream.onNext(request);
+                    }
+                  });
+              requestStream.disableAutoRequestWithInitial(WINDOW_SIZE);
+            }
+
+            @Override
+            public void onNext(Response value) {
+              counter.countReceived();
+              int w = windowSize--;
+              if (w == WINDOW_SIZE / 2) {
+                windowSize += WINDOW_SIZE;
+                requestStream.request(WINDOW_SIZE);
+              }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+              logger.info("grpc bidiStream response error", t);
+              channel.shutdownNow();
+            }
+
+            @Override
+            public void onCompleted() {
+              logger.info("grpc bidiStream response complete");
+              requestStream.onCompleted();
+            }
+          });
+    }
+
+    private static class Counter {
+      final AtomicInteger sentCounter = new AtomicInteger();
+      final AtomicInteger receivedCounter = new AtomicInteger();
+
+      Counter(ScheduledExecutorService executor) {
+        executor.scheduleAtFixedRate(
+            () -> {
+              logger.info("client sent messages: {}", sentCounter.getAndSet(0));
+              logger.info("client received messages: {}", receivedCounter.getAndSet(0));
+            },
+            1,
+            1,
+            TimeUnit.SECONDS);
+      }
+
+      public void countReceived() {
+        receivedCounter.incrementAndGet();
+      }
+
+      public void countSent() {
+        sentCounter.incrementAndGet();
+      }
+    }
+  }
+
   static InetSocketAddress inetSocketAddress(String host, String port) {
     return new InetSocketAddress(host, Integer.parseInt(port));
   }
@@ -185,10 +268,14 @@ public class Main {
       throw new IllegalArgumentException("Unexpected service format: " + serviceAddress);
     }
     String call = serviceAddress.substring(idx + 1);
-    if ("reply".equals(call) || "stream".equals(call)) {
-      return call;
+    switch (call) {
+      case "reply":
+      case "stream":
+      case "bidi":
+        return call;
+      default:
+        throw new IllegalArgumentException("Unsupported interaction: " + call);
     }
-    throw new IllegalArgumentException("Unsupported interaction: " + call);
   }
 
   static String service(String serviceAddress) {

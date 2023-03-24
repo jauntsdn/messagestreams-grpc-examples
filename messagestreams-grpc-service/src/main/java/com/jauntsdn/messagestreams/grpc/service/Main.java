@@ -30,9 +30,9 @@ public class Main {
     String serviceTcpAddress = System.getProperty("SERVICE_ADDRESS_TCP", "tcp://localhost");
     String serviceWsHttp2Address = System.getProperty("SERVICE_ADDRESS_WS", "ws://localhost");
     String serviceGrpcAddress = System.getProperty("SERVICE_ADDRESS_GRPC", "grpc://localhost");
-    logger.info("==> FUTURES SERVICE, TCP: {}", serviceTcpAddress);
-    logger.info("==> FUTURES SERVICE, WEBSOCKET: {}", serviceWsHttp2Address);
-    logger.info("==> FUTURES SERVICE, GRPC: {}", serviceGrpcAddress);
+    logger.info("==> GRPC-API SERVICE, TCP: {}", serviceTcpAddress);
+    logger.info("==> GRPC-API SERVICE, WEBSOCKET: {}", serviceWsHttp2Address);
+    logger.info("==> GRPC-API SERVICE, GRPC: {}", serviceGrpcAddress);
 
     /*service are implemented in terms of grpc-stubs (StreamObserver API) and generated Protobuf messages */
     StreamService service = new GoodStreamService();
@@ -66,6 +66,7 @@ public class Main {
     @Override
     public void reply(Request message, ByteBuf metadata, StreamObserver<Response> observer) {
       observer.onNext(Response.newBuilder().setMessage(message.getMessage()).build());
+      observer.onCompleted();
     }
 
     @Override
@@ -79,6 +80,66 @@ public class Main {
               observer.onNext(response);
             }
           });
+    }
+
+    @Override
+    public StreamObserver<Request> bidiStream(ByteBuf metadata, StreamObserver<Response> observer) {
+      ServerCallStreamObserver<Response> callObserver =
+          (ServerCallStreamObserver<Response>) observer;
+      ResponseWriter responseWriter = new ResponseWriter(callObserver);
+      callObserver.setOnReadyHandler(responseWriter);
+
+      return new StreamObserver<>() {
+        boolean responseStarted;
+
+        @Override
+        public void onNext(Request message) {
+          if (!responseStarted) {
+            responseStarted = true;
+            responseWriter.write(Response.newBuilder().setMessage(message.getMessage()).build());
+          }
+        }
+
+        @Override
+        public void onError(Throwable t) {
+          logger.info("rsocket-rpc bidiStream request error", t);
+        }
+
+        @Override
+        public void onCompleted() {
+          logger.info("rsocket-rpc bidiStream request complete");
+          observer.onCompleted();
+        }
+      };
+    }
+
+    private static class ResponseWriter implements Runnable {
+      private final ServerCallStreamObserver<Response> observer;
+      private Response response;
+
+      public ResponseWriter(ServerCallStreamObserver<Response> observer) {
+        this.observer = observer;
+      }
+
+      public void write(Response r) {
+        response = r;
+        ServerCallStreamObserver<Response> o = observer;
+        while (o.isReady()) {
+          o.onNext(r);
+        }
+      }
+
+      @Override
+      public void run() {
+        Response r = response;
+        if (r == null) {
+          return;
+        }
+        ServerCallStreamObserver<Response> o = observer;
+        while (o.isReady()) {
+          o.onNext(r);
+        }
+      }
     }
   }
 
@@ -102,9 +163,10 @@ public class Main {
   private static BiConsumer<Disposable, Throwable> serverStartListener() {
     return (disposable, err) -> {
       if (err != null) {
-        logger.info("==> FUTURES SERVER BOUND WITH ERROR: {}:{}", err.getClass(), err.getMessage());
+        logger.info(
+            "==> GRPC-API SERVER BOUND WITH ERROR: {}:{}", err.getClass(), err.getMessage());
       } else {
-        logger.info("==> FUTURES SERVER BOUND SUCCESSFULLY");
+        logger.info("==> GRPC-API SERVER BOUND SUCCESSFULLY");
       }
     };
   }

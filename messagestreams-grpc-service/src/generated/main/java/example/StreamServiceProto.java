@@ -35,11 +35,12 @@ public final class StreamServiceProto {
     java.lang.String[] descriptorData = {
       "\n\rservice.proto\022\007example\"\032\n\007Request\022\017\n\007m" +
       "essage\030\001 \001(\t\"\033\n\010Response\022\017\n\007message\030\001 \001(" +
-      "\t2x\n\rStreamService\022.\n\005reply\022\020.example.Re" +
-      "quest\032\021.example.Response\"\000\0227\n\014serverStre" +
-      "am\022\020.example.Request\032\021.example.Response\"" +
-      "\0000\001B\037\n\007exampleB\022StreamServiceProtoP\001b\006pr" +
-      "oto3"
+      "\t2\261\001\n\rStreamService\022.\n\005reply\022\020.example.R" +
+      "equest\032\021.example.Response\"\000\0227\n\014serverStr" +
+      "eam\022\020.example.Request\032\021.example.Response" +
+      "\"\0000\001\0227\n\nbidiStream\022\020.example.Request\032\021.e" +
+      "xample.Response\"\000(\0010\001B\037\n\007exampleB\022Stream" +
+      "ServiceProtoP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

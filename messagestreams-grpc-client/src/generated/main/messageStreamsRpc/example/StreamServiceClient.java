@@ -12,6 +12,7 @@ public final class StreamServiceClient implements StreamService {
   private final io.netty.buffer.ByteBufAllocator allocator;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> replyInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> serverStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> bidiStreamInstrumentation;
   private final com.jauntsdn.rsocket.Rpc.Codec rpcCodec;
 
   private StreamServiceClient(com.jauntsdn.rsocket.MessageStreams streams, java.util.Optional<com.jauntsdn.rsocket.RpcInstrumentation> instrumentation) {
@@ -23,9 +24,11 @@ public final class StreamServiceClient implements StreamService {
     if (i == null) {
       this.replyInstrumentation = null;
       this.serverStreamInstrumentation = null;
+      this.bidiStreamInstrumentation = null;
     } else {
       this.replyInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_REPLY, false);
       this.serverStreamInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_SERVER_STREAM, true);
+      this.bidiStreamInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_BIDI_STREAM, true);
     }
     com.jauntsdn.rsocket.Rpc.Codec codec = streams.attributes().attr(com.jauntsdn.rsocket.Attributes.RPC_CODEC);
     if (codec != null) {
@@ -85,6 +88,42 @@ public final class StreamServiceClient implements StreamService {
       instrumentationListener = serverStreamInstrumentation.create();
     }
     streams.requestStream(msg, com.jauntsdn.rsocket.RpcMessageCodec.Stream.Client.decode(observer, decode(example.Response.parser()), instrumentationListener));
+  }
+
+  @Override
+  @com.jauntsdn.rsocket.Rpc.GeneratedMethod(returnType = example.Response.class)
+  public io.grpc.stub.StreamObserver<example.Request> bidiStream(io.netty.buffer.ByteBuf metadata, io.grpc.stub.StreamObserver<example.Response> observer) {
+    com.jauntsdn.rsocket.RpcInstrumentation.Listener<example.Response> instrumentationListener = null;
+    if (bidiStreamInstrumentation != null) {
+      instrumentationListener = bidiStreamInstrumentation.create();
+    }
+    com.jauntsdn.rsocket.RpcMessageCodec.Channel.Client.Encoder<example.Request> bidiStreamEncoder = 
+      new com.jauntsdn.rsocket.RpcMessageCodec.Channel.Client.Encoder<example.Request>(instrumentationListener) {
+        private boolean started;
+
+        @Override
+        public com.jauntsdn.rsocket.Message onNext(example.Request message) {
+          int dataSize = message.getSerializedSize();
+          com.jauntsdn.rsocket.Rpc.Codec codec = rpcCodec;
+          if (!started) {
+            started = true;
+            int externalMetadataSize = streams.attributes().intAttr(com.jauntsdn.rsocket.Attributes.EXTERNAL_METADATA_SIZE);
+            int localHeader = com.jauntsdn.rsocket.MessageMetadata.header(metadata);
+            boolean isDefaultService = com.jauntsdn.rsocket.MessageMetadata.defaultService(localHeader);
+            String service = isDefaultService ? com.jauntsdn.rsocket.Rpc.RpcMetadata.defaultService() : StreamService.SERVICE;
+            io.netty.buffer.ByteBuf content = codec.encodeContent(allocator, metadata, localHeader, service, StreamService.METHOD_BIDI_STREAM, true, StreamService.METHOD_BIDI_STREAM_IDEMPOTENT, dataSize, externalMetadataSize);
+            encode(content, message);
+            return codec.encodeMessage(content, StreamService.METHOD_BIDI_STREAM_RANK);
+          } else {
+            io.netty.buffer.ByteBuf content = codec.encodeContent(allocator, dataSize);
+            encode(content, message);
+            return codec.encodeMessage(content);
+          }
+        }
+    };
+    io.grpc.stub.StreamObserver<com.jauntsdn.rsocket.Message> bidiStreamRequest = streams.requestChannel(
+      com.jauntsdn.rsocket.RpcMessageCodec.Channel.Client.decode(observer, bidiStreamEncoder, decode(example.Response.parser()), instrumentationListener));
+    return bidiStreamEncoder.encodeStream(bidiStreamRequest);
   }
 
   private io.netty.buffer.ByteBuf encode(io.netty.buffer.ByteBuf content, final com.google.protobuf.MessageLite message) {

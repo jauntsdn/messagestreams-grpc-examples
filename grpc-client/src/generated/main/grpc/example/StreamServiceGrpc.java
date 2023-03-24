@@ -77,6 +77,37 @@ public final class StreamServiceGrpc {
     return getServerStreamMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<example.Request,
+      example.Response> getBidiStreamMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "bidiStream",
+      requestType = example.Request.class,
+      responseType = example.Response.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+  public static io.grpc.MethodDescriptor<example.Request,
+      example.Response> getBidiStreamMethod() {
+    io.grpc.MethodDescriptor<example.Request, example.Response> getBidiStreamMethod;
+    if ((getBidiStreamMethod = StreamServiceGrpc.getBidiStreamMethod) == null) {
+      synchronized (StreamServiceGrpc.class) {
+        if ((getBidiStreamMethod = StreamServiceGrpc.getBidiStreamMethod) == null) {
+          StreamServiceGrpc.getBidiStreamMethod = getBidiStreamMethod =
+              io.grpc.MethodDescriptor.<example.Request, example.Response>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "bidiStream"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  example.Request.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  example.Response.getDefaultInstance()))
+              .setSchemaDescriptor(new StreamServiceMethodDescriptorSupplier("bidiStream"))
+              .build();
+        }
+      }
+    }
+    return getBidiStreamMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -139,6 +170,13 @@ public final class StreamServiceGrpc {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getServerStreamMethod(), responseObserver);
     }
 
+    /**
+     */
+    public io.grpc.stub.StreamObserver<example.Request> bidiStream(
+        io.grpc.stub.StreamObserver<example.Response> responseObserver) {
+      return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getBidiStreamMethod(), responseObserver);
+    }
+
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -155,6 +193,13 @@ public final class StreamServiceGrpc {
                 example.Request,
                 example.Response>(
                   this, METHODID_SERVER_STREAM)))
+          .addMethod(
+            getBidiStreamMethod(),
+            io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
+              new MethodHandlers<
+                example.Request,
+                example.Response>(
+                  this, METHODID_BIDI_STREAM)))
           .build();
     }
   }
@@ -187,6 +232,14 @@ public final class StreamServiceGrpc {
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       io.grpc.stub.ClientCalls.asyncServerStreamingCall(
           getChannel().newCall(getServerStreamMethod(), getCallOptions()), request, responseObserver);
+    }
+
+    /**
+     */
+    public io.grpc.stub.StreamObserver<example.Request> bidiStream(
+        io.grpc.stub.StreamObserver<example.Response> responseObserver) {
+      return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
+          getChannel().newCall(getBidiStreamMethod(), getCallOptions()), responseObserver);
     }
   }
 
@@ -245,6 +298,7 @@ public final class StreamServiceGrpc {
 
   private static final int METHODID_REPLY = 0;
   private static final int METHODID_SERVER_STREAM = 1;
+  private static final int METHODID_BIDI_STREAM = 2;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -281,6 +335,9 @@ public final class StreamServiceGrpc {
     public io.grpc.stub.StreamObserver<Req> invoke(
         io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
+        case METHODID_BIDI_STREAM:
+          return (io.grpc.stub.StreamObserver<Req>) serviceImpl.bidiStream(
+              (io.grpc.stub.StreamObserver<example.Response>) responseObserver);
         default:
           throw new AssertionError();
       }
@@ -334,6 +391,7 @@ public final class StreamServiceGrpc {
               .setSchemaDescriptor(new StreamServiceFileDescriptorSupplier())
               .addMethod(getReplyMethod())
               .addMethod(getServerStreamMethod())
+              .addMethod(getBidiStreamMethod())
               .build();
         }
       }

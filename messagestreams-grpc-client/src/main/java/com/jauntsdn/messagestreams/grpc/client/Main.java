@@ -8,6 +8,8 @@ import example.Request;
 import example.Response;
 import example.StreamService;
 import example.StreamServiceClient;
+import io.grpc.stub.ClientCallStreamObserver;
+import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -49,6 +51,9 @@ public class Main {
                   break;
                 case "stream":
                   Stream.start(messageStreams);
+                  break;
+                case "bidi":
+                  Bidi.start(messageStreams);
                   break;
               }
               return messageStreams;
@@ -194,16 +199,101 @@ public class Main {
     }
   }
 
+  static final class Bidi {
+
+    public static void start(MessageStreams messageStreams) {
+
+      StreamServiceClient streamServiceClient =
+          StreamServiceClient.create(messageStreams, Optional.empty());
+      Request request = Request.newBuilder().setMessage("data").build();
+
+      Counter counter = new Counter(messageStreams);
+
+      streamServiceClient.bidiStream(
+          Unpooled.EMPTY_BUFFER,
+          new ClientResponseObserver<Request, Response>() {
+            ClientCallStreamObserver<Request> requestStream;
+
+            @Override
+            public void beforeStart(ClientCallStreamObserver<Request> requestStream) {
+              this.requestStream = requestStream;
+              requestStream.setOnReadyHandler(
+                  () -> {
+                    while (requestStream.isReady()) {
+                      counter.countSent();
+                      requestStream.onNext(request);
+                    }
+                  });
+            }
+
+            @Override
+            public void onNext(Response value) {
+              counter.countReceived();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+              logger.info("rsocket-rpc bidiStream response error", t);
+              messageStreams.dispose();
+            }
+
+            @Override
+            public void onCompleted() {
+              logger.info("rsocket-rpc bidiStream response complete");
+              requestStream.onCompleted();
+            }
+          });
+    }
+
+    private static class Counter {
+      int receivedCounter;
+      int sentCounter;
+
+      Counter(MessageStreams messageStreams) {
+        ScheduledFuture<?> future =
+            messageStreams
+                .scheduler()
+                .get()
+                .scheduleAtFixedRate(
+                    () -> {
+                      int c = sentCounter;
+                      sentCounter = 0;
+                      logger.info("client sent messages: {}", c);
+
+                      c = receivedCounter;
+                      receivedCounter = 0;
+                      logger.info("client received messages: {}", c);
+                    },
+                    1,
+                    1,
+                    TimeUnit.SECONDS);
+        messageStreams.onClose().thenAccept(v -> future.cancel(true));
+      }
+
+      public void countReceived() {
+        receivedCounter++;
+      }
+
+      public void countSent() {
+        sentCounter++;
+      }
+    }
+  }
+
   static String call(String serviceAddress) {
     int idx = serviceAddress.lastIndexOf("/");
     if (idx == -1) {
       throw new IllegalArgumentException("Unexpected address format: " + serviceAddress);
     }
     String call = serviceAddress.substring(idx + 1);
-    if ("reply".equals(call) || "stream".equals(call)) {
-      return call;
+    switch (call) {
+      case "reply":
+      case "stream":
+      case "bidi":
+        return call;
+      default:
+        throw new IllegalArgumentException("Unsupported interaction: " + call);
     }
-    throw new IllegalArgumentException("Unsupported interaction: " + call);
   }
 
   static String service(String serviceAddress) {

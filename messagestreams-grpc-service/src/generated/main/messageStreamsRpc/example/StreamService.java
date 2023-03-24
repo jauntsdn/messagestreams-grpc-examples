@@ -15,9 +15,15 @@ public interface StreamService {
   boolean METHOD_SERVER_STREAM_IDEMPOTENT = false;
   int METHOD_SERVER_STREAM_RANK = 0;
 
+  String METHOD_BIDI_STREAM = "bidiStream";
+  boolean METHOD_BIDI_STREAM_IDEMPOTENT = false;
+  int METHOD_BIDI_STREAM_RANK = 0;
+
   void reply(example.Request message, io.netty.buffer.ByteBuf metadata, io.grpc.stub.StreamObserver<example.Response> observer);
 
   void serverStream(example.Request message, io.netty.buffer.ByteBuf metadata, io.grpc.stub.StreamObserver<example.Response> observer);
+
+  io.grpc.stub.StreamObserver<example.Request> bidiStream(io.netty.buffer.ByteBuf metadata, io.grpc.stub.StreamObserver<example.Response> observer);
 
   default void reply(example.Request message, io.grpc.stub.StreamObserver<example.Response> observer) {
     reply(message, io.netty.buffer.Unpooled.EMPTY_BUFFER, observer);
@@ -25,5 +31,9 @@ public interface StreamService {
 
   default void serverStream(example.Request message, io.grpc.stub.StreamObserver<example.Response> observer) {
     serverStream(message, io.netty.buffer.Unpooled.EMPTY_BUFFER, observer);
+  }
+
+  default io.grpc.stub.StreamObserver<example.Request> bidiStream(io.grpc.stub.StreamObserver<example.Response> observer) {
+    return bidiStream(io.netty.buffer.Unpooled.EMPTY_BUFFER, observer);
   }
 }
