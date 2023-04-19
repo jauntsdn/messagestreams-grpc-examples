@@ -5,7 +5,7 @@ import static io.grpc.MethodDescriptor.generateFullMethodName;
 /**
  */
 @javax.annotation.Generated(
-    value = "by gRPC proto compiler (version 1.53.0)",
+    value = "by gRPC proto compiler (version 1.54.1)",
     comments = "Source: service.proto")
 @io.grpc.stub.annotations.GrpcGenerated
 public final class StreamServiceGrpc {
@@ -154,59 +154,46 @@ public final class StreamServiceGrpc {
 
   /**
    */
-  public static abstract class StreamServiceImplBase implements io.grpc.BindableService {
+  public interface AsyncService {
 
     /**
      */
-    public void reply(example.Request request,
+    default void reply(example.Request request,
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getReplyMethod(), responseObserver);
     }
 
     /**
      */
-    public void serverStream(example.Request request,
+    default void serverStream(example.Request request,
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getServerStreamMethod(), responseObserver);
     }
 
     /**
      */
-    public io.grpc.stub.StreamObserver<example.Request> bidiStream(
+    default io.grpc.stub.StreamObserver<example.Request> bidiStream(
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getBidiStreamMethod(), responseObserver);
-    }
-
-    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
-      return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
-          .addMethod(
-            getReplyMethod(),
-            io.grpc.stub.ServerCalls.asyncUnaryCall(
-              new MethodHandlers<
-                example.Request,
-                example.Response>(
-                  this, METHODID_REPLY)))
-          .addMethod(
-            getServerStreamMethod(),
-            io.grpc.stub.ServerCalls.asyncServerStreamingCall(
-              new MethodHandlers<
-                example.Request,
-                example.Response>(
-                  this, METHODID_SERVER_STREAM)))
-          .addMethod(
-            getBidiStreamMethod(),
-            io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
-              new MethodHandlers<
-                example.Request,
-                example.Response>(
-                  this, METHODID_BIDI_STREAM)))
-          .build();
     }
   }
 
   /**
+   * Base class for the server implementation of the service StreamService.
    */
-  public static final class StreamServiceStub extends io.grpc.stub.AbstractAsyncStub<StreamServiceStub> {
+  public static abstract class StreamServiceImplBase
+      implements io.grpc.BindableService, AsyncService {
+
+    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
+      return StreamServiceGrpc.bindService(this);
+    }
+  }
+
+  /**
+   * A stub to allow clients to do asynchronous rpc calls to service StreamService.
+   */
+  public static final class StreamServiceStub
+      extends io.grpc.stub.AbstractAsyncStub<StreamServiceStub> {
     private StreamServiceStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -244,8 +231,10 @@ public final class StreamServiceGrpc {
   }
 
   /**
+   * A stub to allow clients to do synchronous rpc calls to service StreamService.
    */
-  public static final class StreamServiceBlockingStub extends io.grpc.stub.AbstractBlockingStub<StreamServiceBlockingStub> {
+  public static final class StreamServiceBlockingStub
+      extends io.grpc.stub.AbstractBlockingStub<StreamServiceBlockingStub> {
     private StreamServiceBlockingStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -274,8 +263,10 @@ public final class StreamServiceGrpc {
   }
 
   /**
+   * A stub to allow clients to do ListenableFuture-style rpc calls to service StreamService.
    */
-  public static final class StreamServiceFutureStub extends io.grpc.stub.AbstractFutureStub<StreamServiceFutureStub> {
+  public static final class StreamServiceFutureStub
+      extends io.grpc.stub.AbstractFutureStub<StreamServiceFutureStub> {
     private StreamServiceFutureStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -305,10 +296,10 @@ public final class StreamServiceGrpc {
       io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
       io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
       io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
-    private final StreamServiceImplBase serviceImpl;
+    private final AsyncService serviceImpl;
     private final int methodId;
 
-    MethodHandlers(StreamServiceImplBase serviceImpl, int methodId) {
+    MethodHandlers(AsyncService serviceImpl, int methodId) {
       this.serviceImpl = serviceImpl;
       this.methodId = methodId;
     }
@@ -342,6 +333,32 @@ public final class StreamServiceGrpc {
           throw new AssertionError();
       }
     }
+  }
+
+  public static final io.grpc.ServerServiceDefinition bindService(AsyncService service) {
+    return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
+        .addMethod(
+          getReplyMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              example.Request,
+              example.Response>(
+                service, METHODID_REPLY)))
+        .addMethod(
+          getServerStreamMethod(),
+          io.grpc.stub.ServerCalls.asyncServerStreamingCall(
+            new MethodHandlers<
+              example.Request,
+              example.Response>(
+                service, METHODID_SERVER_STREAM)))
+        .addMethod(
+          getBidiStreamMethod(),
+          io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
+            new MethodHandlers<
+              example.Request,
+              example.Response>(
+                service, METHODID_BIDI_STREAM)))
+        .build();
   }
 
   private static abstract class StreamServiceBaseDescriptorSupplier
