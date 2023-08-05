@@ -2,7 +2,7 @@ package com.jauntsdn.messagestreams.grpc.client;
 
 import com.jauntsdn.messagestreams.grpc.MessageStreamsFactory;
 import com.jauntsdn.rsocket.Closeable;
-import com.jauntsdn.rsocket.MessageMetadata;
+import com.jauntsdn.rsocket.Headers;
 import com.jauntsdn.rsocket.MessageStreams;
 import example.Request;
 import example.Response;
@@ -11,8 +11,6 @@ import example.StreamServiceClient;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.util.ResourceLeakDetector;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -70,8 +68,7 @@ public class Main {
       StreamService streamService = StreamServiceClient.create(messageStreams);
 
       Request request = Request.newBuilder().setMessage("data").build();
-      ByteBuf metadata =
-          MessageMetadata.allocator(messageStreams.allocator().get()).defaultService(true).build();
+      Headers metadata = Headers.withDefaultService();
 
       Counter counter = new Counter();
 
@@ -86,7 +83,6 @@ public class Main {
           .onClose()
           .whenComplete(
               (ignored, err) -> {
-                metadata.release();
                 scheduledFuture.cancel(true);
               });
 
@@ -154,7 +150,7 @@ public class Main {
 
       streamServiceClient.serverStream(
           request,
-          Unpooled.EMPTY_BUFFER,
+          Headers.empty(),
           new StreamObserver<>() {
 
             @Override
@@ -210,7 +206,7 @@ public class Main {
       Counter counter = new Counter(messageStreams);
 
       streamServiceClient.bidiStream(
-          Unpooled.EMPTY_BUFFER,
+          Headers.empty(),
           new ClientResponseObserver<Request, Response>() {
             ClientCallStreamObserver<Request> requestStream;
 

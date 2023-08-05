@@ -2,6 +2,7 @@ package com.jauntsdn.messagestreams.grpc.service;
 
 import com.jauntsdn.messagestreams.grpc.MessageStreamsFactory;
 import com.jauntsdn.rsocket.Disposable;
+import com.jauntsdn.rsocket.Headers;
 import com.jauntsdn.rsocket.ServerStreamsAcceptor;
 import example.Request;
 import example.Response;
@@ -9,7 +10,6 @@ import example.StreamService;
 import example.StreamServiceServer;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
-import io.netty.buffer.ByteBuf;
 import io.netty.util.ResourceLeakDetector;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,13 +64,13 @@ public class Main {
   static class GoodStreamService implements StreamService {
 
     @Override
-    public void reply(Request message, ByteBuf metadata, StreamObserver<Response> observer) {
+    public void reply(Request message, Headers metadata, StreamObserver<Response> observer) {
       observer.onNext(Response.newBuilder().setMessage(message.getMessage()).build());
       observer.onCompleted();
     }
 
     @Override
-    public void serverStream(Request message, ByteBuf metadata, StreamObserver<Response> observer) {
+    public void serverStream(Request message, Headers metadata, StreamObserver<Response> observer) {
       ServerCallStreamObserver<Response> callStreamObserver =
           (ServerCallStreamObserver<Response>) observer;
       Response response = Response.newBuilder().setMessage(message.getMessage()).build();
@@ -83,7 +83,7 @@ public class Main {
     }
 
     @Override
-    public StreamObserver<Request> bidiStream(ByteBuf metadata, StreamObserver<Response> observer) {
+    public StreamObserver<Request> bidiStream(Headers metadata, StreamObserver<Response> observer) {
       ServerCallStreamObserver<Response> callObserver =
           (ServerCallStreamObserver<Response>) observer;
       ResponseWriter responseWriter = new ResponseWriter(callObserver);
