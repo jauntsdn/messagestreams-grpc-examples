@@ -78,6 +78,37 @@ public final class StreamServiceGrpc {
   }
 
   private static volatile io.grpc.MethodDescriptor<example.Request,
+      example.Response> getClientStreamMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "clientStream",
+      requestType = example.Request.class,
+      responseType = example.Response.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+  public static io.grpc.MethodDescriptor<example.Request,
+      example.Response> getClientStreamMethod() {
+    io.grpc.MethodDescriptor<example.Request, example.Response> getClientStreamMethod;
+    if ((getClientStreamMethod = StreamServiceGrpc.getClientStreamMethod) == null) {
+      synchronized (StreamServiceGrpc.class) {
+        if ((getClientStreamMethod = StreamServiceGrpc.getClientStreamMethod) == null) {
+          StreamServiceGrpc.getClientStreamMethod = getClientStreamMethod =
+              io.grpc.MethodDescriptor.<example.Request, example.Response>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "clientStream"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  example.Request.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  example.Response.getDefaultInstance()))
+              .setSchemaDescriptor(new StreamServiceMethodDescriptorSupplier("clientStream"))
+              .build();
+        }
+      }
+    }
+    return getClientStreamMethod;
+  }
+
+  private static volatile io.grpc.MethodDescriptor<example.Request,
       example.Response> getBidiStreamMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
@@ -106,6 +137,37 @@ public final class StreamServiceGrpc {
       }
     }
     return getBidiStreamMethod;
+  }
+
+  private static volatile io.grpc.MethodDescriptor<example.Request,
+      com.google.protobuf.Empty> getFnfMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "fnf",
+      requestType = example.Request.class,
+      responseType = com.google.protobuf.Empty.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<example.Request,
+      com.google.protobuf.Empty> getFnfMethod() {
+    io.grpc.MethodDescriptor<example.Request, com.google.protobuf.Empty> getFnfMethod;
+    if ((getFnfMethod = StreamServiceGrpc.getFnfMethod) == null) {
+      synchronized (StreamServiceGrpc.class) {
+        if ((getFnfMethod = StreamServiceGrpc.getFnfMethod) == null) {
+          StreamServiceGrpc.getFnfMethod = getFnfMethod =
+              io.grpc.MethodDescriptor.<example.Request, com.google.protobuf.Empty>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "fnf"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  example.Request.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  com.google.protobuf.Empty.getDefaultInstance()))
+              .setSchemaDescriptor(new StreamServiceMethodDescriptorSupplier("fnf"))
+              .build();
+        }
+      }
+    }
+    return getFnfMethod;
   }
 
   /**
@@ -172,9 +234,23 @@ public final class StreamServiceGrpc {
 
     /**
      */
+    default void clientStream(example.Request request,
+        io.grpc.stub.StreamObserver<example.Response> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getClientStreamMethod(), responseObserver);
+    }
+
+    /**
+     */
     default io.grpc.stub.StreamObserver<example.Request> bidiStream(
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getBidiStreamMethod(), responseObserver);
+    }
+
+    /**
+     */
+    default void fnf(example.Request request,
+        io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getFnfMethod(), responseObserver);
     }
   }
 
@@ -223,10 +299,26 @@ public final class StreamServiceGrpc {
 
     /**
      */
+    public void clientStream(example.Request request,
+        io.grpc.stub.StreamObserver<example.Response> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncServerStreamingCall(
+          getChannel().newCall(getClientStreamMethod(), getCallOptions()), request, responseObserver);
+    }
+
+    /**
+     */
     public io.grpc.stub.StreamObserver<example.Request> bidiStream(
         io.grpc.stub.StreamObserver<example.Response> responseObserver) {
       return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
           getChannel().newCall(getBidiStreamMethod(), getCallOptions()), responseObserver);
+    }
+
+    /**
+     */
+    public void fnf(example.Request request,
+        io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getFnfMethod(), getCallOptions()), request, responseObserver);
     }
   }
 
@@ -260,6 +352,21 @@ public final class StreamServiceGrpc {
       return io.grpc.stub.ClientCalls.blockingServerStreamingCall(
           getChannel(), getServerStreamMethod(), getCallOptions(), request);
     }
+
+    /**
+     */
+    public java.util.Iterator<example.Response> clientStream(
+        example.Request request) {
+      return io.grpc.stub.ClientCalls.blockingServerStreamingCall(
+          getChannel(), getClientStreamMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public com.google.protobuf.Empty fnf(example.Request request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getFnfMethod(), getCallOptions(), request);
+    }
   }
 
   /**
@@ -285,11 +392,21 @@ public final class StreamServiceGrpc {
       return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getReplyMethod(), getCallOptions()), request);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<com.google.protobuf.Empty> fnf(
+        example.Request request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getFnfMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_REPLY = 0;
   private static final int METHODID_SERVER_STREAM = 1;
-  private static final int METHODID_BIDI_STREAM = 2;
+  private static final int METHODID_CLIENT_STREAM = 2;
+  private static final int METHODID_FNF = 3;
+  private static final int METHODID_BIDI_STREAM = 4;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -315,6 +432,14 @@ public final class StreamServiceGrpc {
         case METHODID_SERVER_STREAM:
           serviceImpl.serverStream((example.Request) request,
               (io.grpc.stub.StreamObserver<example.Response>) responseObserver);
+          break;
+        case METHODID_CLIENT_STREAM:
+          serviceImpl.clientStream((example.Request) request,
+              (io.grpc.stub.StreamObserver<example.Response>) responseObserver);
+          break;
+        case METHODID_FNF:
+          serviceImpl.fnf((example.Request) request,
+              (io.grpc.stub.StreamObserver<com.google.protobuf.Empty>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -352,12 +477,26 @@ public final class StreamServiceGrpc {
               example.Response>(
                 service, METHODID_SERVER_STREAM)))
         .addMethod(
+          getClientStreamMethod(),
+          io.grpc.stub.ServerCalls.asyncServerStreamingCall(
+            new MethodHandlers<
+              example.Request,
+              example.Response>(
+                service, METHODID_CLIENT_STREAM)))
+        .addMethod(
           getBidiStreamMethod(),
           io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
             new MethodHandlers<
               example.Request,
               example.Response>(
                 service, METHODID_BIDI_STREAM)))
+        .addMethod(
+          getFnfMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              example.Request,
+              com.google.protobuf.Empty>(
+                service, METHODID_FNF)))
         .build();
   }
 
@@ -408,7 +547,9 @@ public final class StreamServiceGrpc {
               .setSchemaDescriptor(new StreamServiceFileDescriptorSupplier())
               .addMethod(getReplyMethod())
               .addMethod(getServerStreamMethod())
+              .addMethod(getClientStreamMethod())
               .addMethod(getBidiStreamMethod())
+              .addMethod(getFnfMethod())
               .build();
         }
       }

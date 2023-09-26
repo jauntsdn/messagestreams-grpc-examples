@@ -12,7 +12,9 @@ public final class StreamServiceClient implements StreamService {
   private final io.netty.buffer.ByteBufAllocator allocator;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> replyInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> serverStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> clientStreamInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<example.Response> bidiStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.google.protobuf.Empty> fnfInstrumentation;
   private final com.jauntsdn.rsocket.Rpc.Codec rpcCodec;
 
   private StreamServiceClient(com.jauntsdn.rsocket.MessageStreams streams, java.util.Optional<com.jauntsdn.rsocket.RpcInstrumentation> instrumentation) {
@@ -24,11 +26,15 @@ public final class StreamServiceClient implements StreamService {
     if (i == null) {
       this.replyInstrumentation = null;
       this.serverStreamInstrumentation = null;
+      this.clientStreamInstrumentation = null;
       this.bidiStreamInstrumentation = null;
+      this.fnfInstrumentation = null;
     } else {
       this.replyInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_REPLY, false);
       this.serverStreamInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_SERVER_STREAM, true);
+      this.clientStreamInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_CLIENT_STREAM, true);
       this.bidiStreamInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_BIDI_STREAM, true);
+      this.fnfInstrumentation = i.instrument("client", StreamService.SERVICE, StreamService.METHOD_FNF, false);
     }
     com.jauntsdn.rsocket.Rpc.Codec codec = streams.attributes().attr(com.jauntsdn.rsocket.Attributes.RPC_CODEC);
     if (codec != null) {
@@ -92,6 +98,25 @@ public final class StreamServiceClient implements StreamService {
 
   @Override
   @com.jauntsdn.rsocket.Rpc.GeneratedMethod(returnType = example.Response.class)
+  public void clientStream(example.Request message, com.jauntsdn.rsocket.Headers headersMetadata, io.grpc.stub.StreamObserver<example.Response> observer) {
+    int externalMetadataSize = streams.attributes().intAttr(com.jauntsdn.rsocket.Attributes.EXTERNAL_METADATA_SIZE);
+    int dataSize = message.getSerializedSize();
+    boolean isDefaultService = headersMetadata.isDefaultService();
+    String service = isDefaultService ? com.jauntsdn.rsocket.Rpc.RpcMetadata.defaultService() : StreamService.SERVICE;
+    io.netty.buffer.ByteBuf metadata = com.jauntsdn.rsocket.generated.ProtobufCodec.encodeHeaders(headersMetadata);
+    com.jauntsdn.rsocket.Rpc.Codec codec = rpcCodec;
+    io.netty.buffer.ByteBuf content = codec.encodeContent(allocator, metadata, service, StreamService.METHOD_CLIENT_STREAM, true, StreamService.METHOD_CLIENT_STREAM_IDEMPOTENT, dataSize, externalMetadataSize);
+    com.jauntsdn.rsocket.generated.ProtobufCodec.encode("StreamServiceClient", content, message);
+    com.jauntsdn.rsocket.Message msg = codec.encodeMessage(content, StreamService.METHOD_CLIENT_STREAM_RANK);
+    com.jauntsdn.rsocket.RpcInstrumentation.Listener<example.Response> instrumentationListener = null;
+    if (clientStreamInstrumentation != null) {
+      instrumentationListener = clientStreamInstrumentation.create();
+    }
+    streams.requestStream(msg, com.jauntsdn.rsocket.RpcMessageCodec.Stream.Client.decode(observer, com.jauntsdn.rsocket.generated.ProtobufCodec.decode("StreamServiceClient", example.Response.parser()), instrumentationListener));
+  }
+
+  @Override
+  @com.jauntsdn.rsocket.Rpc.GeneratedMethod(returnType = example.Response.class)
   public io.grpc.stub.StreamObserver<example.Request> bidiStream(com.jauntsdn.rsocket.Headers headersMetadata, io.grpc.stub.StreamObserver<example.Response> observer) {
     com.jauntsdn.rsocket.RpcInstrumentation.Listener<example.Response> instrumentationListener = null;
     if (bidiStreamInstrumentation != null) {
@@ -124,5 +149,24 @@ public final class StreamServiceClient implements StreamService {
     io.grpc.stub.StreamObserver<com.jauntsdn.rsocket.Message> bidiStreamRequest = streams.requestChannel(
       com.jauntsdn.rsocket.RpcMessageCodec.Channel.Client.decode(observer, bidiStreamEncoder, com.jauntsdn.rsocket.generated.ProtobufCodec.decode("StreamServiceClient", example.Response.parser()), instrumentationListener));
     return bidiStreamEncoder.encodeStream(bidiStreamRequest);
+  }
+
+  @Override
+  @com.jauntsdn.rsocket.Rpc.GeneratedMethod(returnType = com.google.protobuf.Empty.class)
+  public void fnf(example.Request message, com.jauntsdn.rsocket.Headers headersMetadata, io.grpc.stub.StreamObserver<com.google.protobuf.Empty> observer) {
+    int externalMetadataSize = streams.attributes().intAttr(com.jauntsdn.rsocket.Attributes.EXTERNAL_METADATA_SIZE);
+    int dataSize = message.getSerializedSize();
+    boolean isDefaultService = headersMetadata.isDefaultService();
+    String service = isDefaultService ? com.jauntsdn.rsocket.Rpc.RpcMetadata.defaultService() : StreamService.SERVICE;
+    io.netty.buffer.ByteBuf metadata = com.jauntsdn.rsocket.generated.ProtobufCodec.encodeHeaders(headersMetadata);
+    com.jauntsdn.rsocket.Rpc.Codec codec = rpcCodec;
+    io.netty.buffer.ByteBuf content = codec.encodeContent(allocator, metadata, service, StreamService.METHOD_FNF, false, StreamService.METHOD_FNF_IDEMPOTENT, dataSize, externalMetadataSize);
+    com.jauntsdn.rsocket.generated.ProtobufCodec.encode("StreamServiceClient", content, message);
+    com.jauntsdn.rsocket.Message msg = codec.encodeMessage(content, StreamService.METHOD_FNF_RANK);
+    com.jauntsdn.rsocket.RpcInstrumentation.Listener<com.google.protobuf.Empty> instrumentationListener = null;
+    if (fnfInstrumentation != null) {
+      instrumentationListener = fnfInstrumentation.create();
+    }
+    streams.fireAndForget(msg, com.jauntsdn.rsocket.RpcMessageCodec.FireAndForget.Client.decode(observer, com.google.protobuf.Empty.getDefaultInstance(), instrumentationListener));
   }
 }

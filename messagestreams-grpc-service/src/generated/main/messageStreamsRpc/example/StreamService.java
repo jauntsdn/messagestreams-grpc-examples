@@ -15,15 +15,27 @@ public interface StreamService {
   boolean METHOD_SERVER_STREAM_IDEMPOTENT = false;
   int METHOD_SERVER_STREAM_RANK = 0;
 
+  String METHOD_CLIENT_STREAM = "clientStream";
+  boolean METHOD_CLIENT_STREAM_IDEMPOTENT = false;
+  int METHOD_CLIENT_STREAM_RANK = 0;
+
   String METHOD_BIDI_STREAM = "bidiStream";
   boolean METHOD_BIDI_STREAM_IDEMPOTENT = false;
   int METHOD_BIDI_STREAM_RANK = 0;
+
+  String METHOD_FNF = "fnf";
+  boolean METHOD_FNF_IDEMPOTENT = false;
+  int METHOD_FNF_RANK = 0;
 
   void reply(example.Request message, com.jauntsdn.rsocket.Headers metadata, io.grpc.stub.StreamObserver<example.Response> observer);
 
   void serverStream(example.Request message, com.jauntsdn.rsocket.Headers metadata, io.grpc.stub.StreamObserver<example.Response> observer);
 
+  void clientStream(example.Request message, com.jauntsdn.rsocket.Headers metadata, io.grpc.stub.StreamObserver<example.Response> observer);
+
   io.grpc.stub.StreamObserver<example.Request> bidiStream(com.jauntsdn.rsocket.Headers metadata, io.grpc.stub.StreamObserver<example.Response> observer);
+
+  void fnf(example.Request message, com.jauntsdn.rsocket.Headers metadata, io.grpc.stub.StreamObserver<com.google.protobuf.Empty> observer);
 
   default void reply(example.Request message, io.grpc.stub.StreamObserver<example.Response> observer) {
     reply(message, com.jauntsdn.rsocket.Headers.empty(), observer);
@@ -33,7 +45,15 @@ public interface StreamService {
     serverStream(message, com.jauntsdn.rsocket.Headers.empty(), observer);
   }
 
+  default void clientStream(example.Request message, io.grpc.stub.StreamObserver<example.Response> observer) {
+    clientStream(message, com.jauntsdn.rsocket.Headers.empty(), observer);
+  }
+
   default io.grpc.stub.StreamObserver<example.Request> bidiStream(io.grpc.stub.StreamObserver<example.Response> observer) {
     return bidiStream(com.jauntsdn.rsocket.Headers.empty(), observer);
+  }
+
+  default void fnf(example.Request message, io.grpc.stub.StreamObserver<com.google.protobuf.Empty> observer) {
+    fnf(message, com.jauntsdn.rsocket.Headers.empty(), observer);
   }
 }

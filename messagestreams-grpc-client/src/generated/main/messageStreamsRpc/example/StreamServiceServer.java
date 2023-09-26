@@ -14,7 +14,9 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
   private final com.jauntsdn.rsocket.Rpc.Codec rpcCodec;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> replyInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> serverStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> clientStreamInstrumentation;
   private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> bidiStreamInstrumentation;
+  private final com.jauntsdn.rsocket.RpcInstrumentation.Factory<com.jauntsdn.rsocket.Message> fnfInstrumentation;
 
   private StreamServiceServer(StreamService service, com.jauntsdn.rsocket.RpcInstrumentation instrumentation, io.netty.buffer.ByteBufAllocator allocator, com.jauntsdn.rsocket.Rpc.Codec rpcCodec) {
     this.messageEncoder = com.jauntsdn.rsocket.generated.ProtobufCodec.encode("StreamServiceServer", allocator, rpcCodec);
@@ -23,11 +25,15 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
     if (instrumentation == null) {
       this.replyInstrumentation = null;
       this.serverStreamInstrumentation = null;
+      this.clientStreamInstrumentation = null;
       this.bidiStreamInstrumentation = null;
+      this.fnfInstrumentation = null;
     } else {
       this.replyInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_REPLY, false);
       this.serverStreamInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_SERVER_STREAM, true);
+      this.clientStreamInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_CLIENT_STREAM, true);
       this.bidiStreamInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_BIDI_STREAM, true);
+      this.fnfInstrumentation = instrumentation.instrument("service", StreamService.SERVICE, StreamService.METHOD_FNF, false);
     }
   }
 
@@ -51,8 +57,37 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
 
   @Override
   public void fireAndForget(com.jauntsdn.rsocket.Message message, io.grpc.stub.StreamObserver<com.jauntsdn.rsocket.Message> observer) {
-    message.release();
-    observer.onError(new com.jauntsdn.rsocket.exceptions.RpcException("StreamServiceServer: fireAndForget not implemented"));
+    try {
+      io.netty.buffer.ByteBuf metadata = message.metadata();
+      long header = com.jauntsdn.rsocket.Rpc.RpcMetadata.header(metadata);
+      int flags = com.jauntsdn.rsocket.Rpc.RpcMetadata.flags(header);
+      String method = rpcCodec.decodeMessageMethod(metadata, header, flags);
+
+      switch (method) {
+        case StreamService.METHOD_FNF: {
+          if (!StreamService.METHOD_FNF_IDEMPOTENT && com.jauntsdn.rsocket.Rpc.RpcMetadata.flagIdempotentCall(flags)) {
+            observer.onError(new com.jauntsdn.rsocket.exceptions.RpcException("StreamServiceServer: idempotent call to non-idempotent method: " + method));
+            return;
+          }
+          io.netty.buffer.ByteBuf messageData = message.data();
+          com.google.protobuf.CodedInputStream is = com.google.protobuf.CodedInputStream.newInstance(messageData.internalNioBuffer(0, messageData.readableBytes()));
+          com.jauntsdn.rsocket.RpcInstrumentation.Listener<com.jauntsdn.rsocket.Message> instrumentationListener = null;
+          if (fnfInstrumentation != null) {
+            instrumentationListener = fnfInstrumentation.create();
+          }
+          com.jauntsdn.rsocket.Headers fnfHeaders = com.jauntsdn.rsocket.generated.ProtobufCodec.decodeHeaders(metadata);
+          service.fnf(example.Request.parseFrom(is), fnfHeaders, com.jauntsdn.rsocket.RpcMessageCodec.FireAndForget.Server.encode(observer, instrumentationListener));
+          return;
+        }
+        default: {
+          observer.onError(new com.jauntsdn.rsocket.exceptions.RpcException("StreamServiceServer: fireAndForget unknown method: " + method));
+        }
+      }
+    } catch (Throwable t) {
+      observer.onError(t);
+    } finally {
+      message.release();
+    }
   }
 
   @Override
@@ -193,6 +228,20 @@ public final class StreamServiceServer implements com.jauntsdn.rsocket.RpcServic
         }
         com.jauntsdn.rsocket.Headers serverStreamHeaders = com.jauntsdn.rsocket.generated.ProtobufCodec.decodeHeaders(metadata);
         service.serverStream(example.Request.parseFrom(is), serverStreamHeaders, com.jauntsdn.rsocket.RpcMessageCodec.Stream.Server.encode(observer, messageEncoder, instrumentationListener));
+        return true;
+      }
+      case StreamService.METHOD_CLIENT_STREAM: {
+        if (!StreamService.METHOD_CLIENT_STREAM_IDEMPOTENT && com.jauntsdn.rsocket.Rpc.RpcMetadata.flagIdempotentCall(flags)) {
+          observer.onError(new com.jauntsdn.rsocket.exceptions.RpcException("StreamServiceServer: idempotent call to non-idempotent method: " + method));
+          return true;
+        }
+        com.google.protobuf.CodedInputStream is = com.google.protobuf.CodedInputStream.newInstance(data.internalNioBuffer(0, data.readableBytes()));
+        com.jauntsdn.rsocket.RpcInstrumentation.Listener<com.jauntsdn.rsocket.Message> instrumentationListener = null;
+        if (clientStreamInstrumentation != null) {
+          instrumentationListener = clientStreamInstrumentation.create();
+        }
+        com.jauntsdn.rsocket.Headers clientStreamHeaders = com.jauntsdn.rsocket.generated.ProtobufCodec.decodeHeaders(metadata);
+        service.clientStream(example.Request.parseFrom(is), clientStreamHeaders, com.jauntsdn.rsocket.RpcMessageCodec.Stream.Server.encode(observer, messageEncoder, instrumentationListener));
         return true;
       }
       default: {

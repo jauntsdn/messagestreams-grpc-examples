@@ -1,5 +1,6 @@
 package com.jauntsdn.messagestreams.grpc.service;
 
+import com.google.protobuf.Empty;
 import com.jauntsdn.messagestreams.grpc.MessageStreamsFactory;
 import com.jauntsdn.rsocket.Disposable;
 import com.jauntsdn.rsocket.Headers;
@@ -83,6 +84,11 @@ public class Main {
     }
 
     @Override
+    public void clientStream(Request message, Headers metadata, StreamObserver<Response> observer) {
+
+    }
+
+    @Override
     public StreamObserver<Request> bidiStream(Headers metadata, StreamObserver<Response> observer) {
       ServerCallStreamObserver<Response> callObserver =
           (ServerCallStreamObserver<Response>) observer;
@@ -111,6 +117,11 @@ public class Main {
           observer.onCompleted();
         }
       };
+    }
+
+    @Override
+    public void fnf(Request message, Headers metadata, StreamObserver<Empty> observer) {
+
     }
 
     private static class ResponseWriter implements Runnable {

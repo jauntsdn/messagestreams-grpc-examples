@@ -33,18 +33,24 @@ public final class StreamServiceProto {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rservice.proto\022\007example\"\032\n\007Request\022\017\n\007m" +
-      "essage\030\001 \001(\t\"\033\n\010Response\022\017\n\007message\030\001 \001(" +
-      "\t2\261\001\n\rStreamService\022.\n\005reply\022\020.example.R" +
-      "equest\032\021.example.Response\"\000\0227\n\014serverStr" +
-      "eam\022\020.example.Request\032\021.example.Response" +
-      "\"\0000\001\0227\n\nbidiStream\022\020.example.Request\032\021.e" +
-      "xample.Response\"\000(\0010\001B\037\n\007exampleB\022Stream" +
-      "ServiceProtoP\001b\006proto3"
+      "\n\rservice.proto\022\007example\032\033google/protobu" +
+      "f/empty.proto\032\025rsocket/options.proto\"\032\n\007" +
+      "Request\022\017\n\007message\030\001 \001(\t\"\033\n\010Response\022\017\n\007" +
+      "message\030\001 \001(\t2\242\002\n\rStreamService\022.\n\005reply" +
+      "\022\020.example.Request\032\021.example.Response\"\000\022" +
+      "7\n\014serverStream\022\020.example.Request\032\021.exam" +
+      "ple.Response\"\0000\001\0227\n\014clientStream\022\020.examp" +
+      "le.Request\032\021.example.Response\"\0000\001\0227\n\nbid" +
+      "iStream\022\020.example.Request\032\021.example.Resp" +
+      "onse\"\000(\0010\001\0226\n\003fnf\022\020.example.Request\032\026.go" +
+      "ogle.protobuf.Empty\"\005\212B\002\010\001B\037\n\007exampleB\022S" +
+      "treamServiceProtoP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
+          com.google.protobuf.EmptyProto.getDescriptor(),
+          io.rsocket.rpc.RSocketOptions.getDescriptor(),
         });
     internal_static_example_Request_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -58,6 +64,13 @@ public final class StreamServiceProto {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_example_Response_descriptor,
         new java.lang.String[] { "Message", });
+    com.google.protobuf.ExtensionRegistry registry =
+        com.google.protobuf.ExtensionRegistry.newInstance();
+    registry.add(io.rsocket.rpc.RSocketOptions.options);
+    com.google.protobuf.Descriptors.FileDescriptor
+        .internalUpdateFileDescriptor(descriptor, registry);
+    com.google.protobuf.EmptyProto.getDescriptor();
+    io.rsocket.rpc.RSocketOptions.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)
