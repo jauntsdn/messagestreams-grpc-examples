@@ -84,9 +84,8 @@ public class Main {
     }
 
     @Override
-    public void clientStream(Request message, Headers metadata, StreamObserver<Response> observer) {
-
-    }
+    public void clientStream(
+        Request message, Headers metadata, StreamObserver<Response> observer) {}
 
     @Override
     public StreamObserver<Request> bidiStream(Headers metadata, StreamObserver<Response> observer) {
@@ -120,9 +119,7 @@ public class Main {
     }
 
     @Override
-    public void fnf(Request message, Headers metadata, StreamObserver<Empty> observer) {
-
-    }
+    public void fnf(Request message, Headers metadata, StreamObserver<Empty> observer) {}
 
     private static class ResponseWriter implements Runnable {
       private final ServerCallStreamObserver<Response> observer;
