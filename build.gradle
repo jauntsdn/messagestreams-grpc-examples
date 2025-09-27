@@ -21,7 +21,6 @@ plugins {
     id "com.google.protobuf" apply false
     id "com.google.osdetector" apply false
     id "org.graalvm.buildtools.native" apply false
-    id "com.github.ben-manes.versions"
 }
 
 description = "jauntsdn-messagestreams: grpc-stubs (StreamObserver) API demonstration"
